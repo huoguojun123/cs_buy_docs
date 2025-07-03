@@ -1,0 +1,49 @@
+@startuml
+title "类图 - 用户领域模型"
+
+skinparam classAttributeIconSize 0
+
+class User {
+  + Long userId
+  + String username
+  - String passwordHash
+  + String email
+  + String phone
+  + UserStatus status
+  + LocalDateTime createdAt
+  --
+  + register()
+  + login()
+  + updateProfile()
+  + changePassword()
+}
+
+class Address {
+  + Long addressId
+  + String recipientName
+  + String phone
+  + String street
+  + String city
+  - String postcode
+  + String country
+  + Boolean isDefault
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+User "1" -- "0..*" Address : "Manages >"
+
+note right of User::email
+  必须唯一且经过验证
+end note
+
+note bottom of Address
+  用户可以有多个收货地址,
+  但只有一个默认地址。
+end note
+
+@enduml 

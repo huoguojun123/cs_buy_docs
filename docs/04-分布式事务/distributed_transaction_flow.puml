@@ -1,0 +1,139 @@
+@startuml 电商平台分布式事务流程
+
+' 样式设置
+skinparam sequenceArrowThickness 2
+skinparam roundcorner 20
+skinparam maxmessagesize 200
+skinparam sequenceParticipant underline
+
+' 参与者定义
+participant "客户端" as Client
+participant "交易服务\n(TM)" as TradeService
+participant "Seata服务器\n(TC)" as SeataServer
+participant "交易数据库" as TradeDB
+participant "库存服务\n(RM)" as StockService
+participant "库存数据库" as StockDB
+participant "用户服务\n(RM)" as UserService
+participant "用户数据库" as UserDB
+
+' 全局事务开始
+Client -> TradeService: 1. 创建订单请求
+activate TradeService
+
+TradeService -> SeataServer: 2. 开始全局事务(Begin)
+activate SeataServer
+SeataServer --> TradeService: 3. 返回全局事务ID(XID)
+deactivate SeataServer
+
+' 交易服务分支事务
+TradeService -> TradeDB: 4. 执行本地SQL(创建订单)
+activate TradeDB
+TradeDB --> TradeService: 5. SQL执行结果
+deactivate TradeDB
+
+TradeService -> SeataServer: 6. 注册分支事务1
+activate SeataServer
+SeataServer --> TradeService: 7. 分支事务注册成功
+deactivate SeataServer
+
+' 库存服务分支事务
+TradeService -> StockService: 8. 锁定商品库存
+activate StockService
+
+StockService -> SeataServer: 9. 获取全局锁
+activate SeataServer
+SeataServer --> StockService: 10. 获取锁成功
+deactivate SeataServer
+
+StockService -> StockDB: 11. 执行本地SQL(锁定库存)
+activate StockDB
+StockDB --> StockService: 12. SQL执行结果
+deactivate StockDB
+
+StockService -> SeataServer: 13. 注册分支事务2
+activate SeataServer
+SeataServer --> StockService: 14. 分支事务注册成功
+deactivate SeataServer
+
+StockService --> TradeService: 15. 锁定库存成功
+deactivate StockService
+
+' 用户服务分支事务
+TradeService -> UserService: 16. 冻结用户余额
+activate UserService
+
+UserService -> SeataServer: 17. 获取全局锁
+activate SeataServer
+SeataServer --> UserService: 18. 获取锁成功
+deactivate SeataServer
+
+UserService -> UserDB: 19. 执行本地SQL(冻结余额)
+activate UserDB
+UserDB --> UserService: 20. SQL执行结果
+deactivate UserDB
+
+UserService -> SeataServer: 21. 注册分支事务3
+activate SeataServer
+SeataServer --> UserService: 22. 分支事务注册成功
+deactivate SeataServer
+
+UserService --> TradeService: 23. 冻结余额成功
+deactivate UserService
+
+' 全局事务提交
+alt 所有操作成功
+    TradeService -> SeataServer: 24. 提交全局事务(Commit)
+    activate SeataServer
+    
+    SeataServer -> TradeService: 25. 提交分支事务1
+    activate TradeService
+    TradeService --> SeataServer: 26. 分支事务1提交成功
+    deactivate TradeService
+    
+    SeataServer -> StockService: 27. 提交分支事务2
+    activate StockService
+    StockService -> StockDB: 28. 删除undo_log
+    StockService --> SeataServer: 29. 分支事务2提交成功
+    deactivate StockService
+    
+    SeataServer -> UserService: 30. 提交分支事务3
+    activate UserService
+    UserService -> UserDB: 31. 删除undo_log
+    UserService --> SeataServer: 32. 分支事务3提交成功
+    deactivate UserService
+    
+    SeataServer --> TradeService: 33. 全局事务提交成功
+    deactivate SeataServer
+    
+    TradeService --> Client: 34. 订单创建成功
+else 任何操作失败
+    TradeService -> SeataServer: 24. 回滚全局事务(Rollback)
+    activate SeataServer
+    
+    SeataServer -> TradeService: 25. 回滚分支事务1
+    activate TradeService
+    TradeService -> TradeDB: 26. 执行回滚SQL(根据undo_log)
+    TradeService --> SeataServer: 27. 分支事务1回滚成功
+    deactivate TradeService
+    
+    SeataServer -> StockService: 28. 回滚分支事务2
+    activate StockService
+    StockService -> StockDB: 29. 执行回滚SQL(根据undo_log)
+    StockService --> SeataServer: 30. 分支事务2回滚成功
+    deactivate StockService
+    
+    SeataServer -> UserService: 31. 回滚分支事务3
+    activate UserService
+    UserService -> UserDB: 32. 执行回滚SQL(根据undo_log)
+    UserService --> SeataServer: 33. 分支事务3回滚成功
+    deactivate UserService
+    
+    SeataServer --> TradeService: 34. 全局事务回滚成功
+    deactivate SeataServer
+    
+    TradeService --> Client: 35. 订单创建失败
+end
+
+deactivate TradeService
+
+@enduml 

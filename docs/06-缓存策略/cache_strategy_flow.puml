@@ -1,0 +1,89 @@
+@startuml 缓存策略流程图
+
+skinparam handwritten true
+skinparam roundcorner 20
+skinparam sequenceArrowThickness 2
+skinparam participant {
+    BackgroundColor LightGreen
+    BorderColor Black
+}
+skinparam database {
+    BackgroundColor LightBlue
+    BorderColor Black
+}
+
+actor "用户" as User
+participant "应用服务" as App
+participant "本地缓存\n(Caffeine)" as L1Cache
+participant "分布式缓存\n(Redis)" as L2Cache
+database "数据库\n(MySQL)" as DB
+
+box "应用服务器"
+    participant App
+    participant L1Cache
+end box
+
+box "缓存层"
+    participant L2Cache
+end box
+
+box "数据源"
+    database DB
+end box
+
+
+User -> App: 发起读请求
+activate App
+
+App -> L1Cache: 1. 查询本地缓存
+activate L1Cache
+L1Cache -->> App: 命中或未命中
+deactivate L1Cache
+
+alt 本地缓存命中
+    App -->> User: 返回数据
+else 本地缓存未命中
+    App -> L2Cache: 2. 查询Redis缓存
+    activate L2Cache
+    L2Cache -->> App: 命中或未命中
+    deactivate L2Cache
+    
+    alt Redis缓存命中
+        App -> L1Cache: 3a. 数据写入本地缓存
+        App -->> User: 返回数据
+    else Redis缓存未命中
+        App -> DB: 4. 查询数据库
+        activate DB
+        DB -->> App: 返回数据
+        deactivate DB
+
+        App -> L2Cache: 5a. 数据写入Redis
+        App -> L1Cache: 5b. 数据写入本地缓存
+        App -->> User: 返回数据
+    end
+end
+deactivate App
+
+
+== 写操作 (Cache-Aside) ==
+
+User -> App: 发起写请求
+activate App
+
+App -> DB: 1. 更新数据库
+activate DB
+DB -->> App: 更新成功
+deactivate DB
+
+App -> L2Cache: 2. 删除Redis缓存
+activate L2Cache
+L2Cache -->> App: 删除成功
+deactivate L2Cache
+
+App -> App: 3. 发送消息\n(通知其他节点删除本地缓存)
+note right: 使用消息队列(MQ)\n广播缓存失效消息
+
+App -->> User: 操作成功
+deactivate App
+
+@enduml 

@@ -1,0 +1,86 @@
+@startuml JWT结构图
+
+' 样式设置
+skinparam backgroundColor White
+skinparam componentStyle rectangle
+skinparam component {
+  BackgroundColor PaleGreen
+  BorderColor Black
+  ArrowColor Black
+}
+skinparam note {
+  BackgroundColor LightYellow
+  BorderColor Black
+}
+
+' JWT组件定义
+component "JWT令牌" as JWT {
+  component "Header (头部)" as Header {
+    note right of Header
+      {
+        "alg": "RS256",
+        "typ": "JWT"
+      }
+    end note
+  }
+  
+  component "Payload (负载)" as Payload {
+    note right of Payload
+      {
+        "sub": "1234567890",
+        "name": "John Doe",
+        "admin": true,
+        "iat": 1516239022,
+        "exp": 1516242622
+      }
+    end note
+  }
+  
+  component "Signature (签名)" as Signature {
+    note right of Signature
+      HMACSHA256(
+        base64UrlEncode(header) + "." +
+        base64UrlEncode(payload),
+        secret
+      )
+    end note
+  }
+}
+
+' 组件间的关系
+Header -down-> Payload : Base64Url编码后用"."连接
+Payload -down-> Signature : Base64Url编码后用"."连接
+
+' JWT处理流程
+actor 客户端 as Client
+participant "认证服务器" as AuthServer
+participant "资源服务器" as ResourceServer
+
+Client -> AuthServer : 1. 用户认证请求
+AuthServer -> AuthServer : 2. 验证用户凭证
+AuthServer -> AuthServer : 3. 生成JWT令牌
+AuthServer -> Client : 4. 返回JWT令牌
+Client -> ResourceServer : 5. 请求资源(携带JWT)
+ResourceServer -> ResourceServer : 6. 验证JWT签名
+ResourceServer -> ResourceServer : 7. 检查JWT是否过期
+ResourceServer -> Client : 8. 返回请求的资源
+
+' JWT声明类型说明
+note bottom of JWT
+  <b>注册声明 (Registered Claims)</b>
+  - iss (issuer): 签发者
+  - sub (subject): 主题
+  - aud (audience): 受众
+  - exp (expiration time): 过期时间
+  - nbf (not before): 生效时间
+  - iat (issued at): 签发时间
+  - jti (JWT ID): 编号
+  
+  <b>公共声明 (Public Claims)</b>
+  - 可以添加任何公共的声明
+  
+  <b>私有声明 (Private Claims)</b>
+  - 用于在同意使用它们的各方之间共享信息
+end note
+
+@enduml 

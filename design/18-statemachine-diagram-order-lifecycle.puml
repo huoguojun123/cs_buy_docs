@@ -1,0 +1,26 @@
+@startuml
+title "订单(Order)状态机图"
+
+[*] --> PENDING_PAYMENT : 创建订单
+
+PENDING_PAYMENT --> PAID : [支付成功] / 执行支付
+PENDING_PAYMENT --> CANCELLED : [用户取消] / 释放库存
+PENDING_PAYMENT --> CANCELLED : [支付超时] / 释放库存
+
+PAID --> SHIPPED : [仓库发货] / 通知物流
+PAID --> REFUND_PROCESSING : [用户申请退款] / 创建售后单
+
+SHIPPED --> DELIVERED : [用户确认收货]
+SHIPPED --> REFUND_PROCESSING : [用户申请退货] / 创建售后单
+
+DELIVERED --> COMPLETED : [交易完成]
+DELIVERED --> REFUND_PROCESSING : [用户申请退货] / 创建售后单
+
+REFUND_PROCESSING --> CANCELLED : [退款成功] / 增加库存
+REFUND_PROCESSING --> PAID : [退款申请被驳回, 订单状态恢复]
+REFUND_PROCESSING --> SHIPPED : [退款申请被驳回, 订单状态恢复]
+
+CANCELLED --> [*]
+COMPLETED --> [*]
+
+@enduml 

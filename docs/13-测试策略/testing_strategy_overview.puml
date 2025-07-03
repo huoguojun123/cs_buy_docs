@@ -1,0 +1,57 @@
+@startuml 测试策略概览
+
+!theme blueprint
+
+title 软件质量保障体系
+
+left to right direction
+
+package "自动化测试" {
+  node "测试金字塔" as Pyramid {
+    artifact "单元测试 (JUnit, Vitest)" as Unit
+    artifact "集成测试 (Testcontainers)" as Integration
+    artifact "E2E测试 (Cypress)" as E2E
+    
+    Unit --> Integration
+    Integration --> E2E
+  }
+}
+
+package "专项测试" {
+    node "性能测试" as Perf {
+        artifact "JMeter/Gatling" as PerfTool
+        artifact "压力/负载/稳定性测试" as PerfType
+    }
+    node "安全测试" as Sec {
+        artifact "SAST (静态分析)" as SAST
+        artifact "DAST (动态分析)" as DAST
+        artifact "渗透测试" as Pentest
+    }
+    node "混沌工程" as Chaos {
+        artifact "Chaos Mesh" as ChaosTool
+        artifact "故障注入" as FaultInjection
+    }
+    Perf --> PerfTool
+    Perf --> PerfType
+    Sec --> SAST
+    Sec --> DAST
+    Sec --> Pentest
+    Chaos --> ChaosTool
+    Chaos --> FaultInjection
+}
+
+package "流程与文化" {
+    artifact "CI/CD集成" as CI
+    artifact "代码审查 (Code Review)" as CR
+    artifact "测试左移 (Shift-Left)" as ShiftLeft
+}
+
+cloud "质量保障" as QA
+
+Pyramid --> CI
+Perf --> CI
+CI --> QA
+CR --> QA
+ShiftLeft --> QA
+
+@enduml 

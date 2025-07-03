@@ -1,0 +1,60 @@
+@startuml 扩展性设计
+
+!theme sketchy-outline
+
+title 系统扩展性设计核心思想
+
+package "架构层面" {
+  node "微服务架构" as MS {
+    artifact "按业务拆分" as BizSplit
+    artifact "无状态服务" as Stateless
+    artifact "弹性伸缩 (HPA)" as HPA
+  }
+}
+
+package "代码层面" {
+  node "设计模式" as Patterns {
+    artifact "策略模式\n(支付方式)" as Strategy
+    artifact "观察者模式\n(用户注册后操作)" as Observer
+    artifact "模板方法模式\n(订单处理流程)" as Template
+    artifact "工厂模式\n(对象创建)" as Factory
+  }
+}
+
+package "功能集成层面" {
+    node "新功能" as NewFeature {
+        artifact "功能开关\n(Feature Flag)" as FeatureFlag
+        artifact "接口先行\n(OpenAPI)" as ApiFirst
+        artifact "灰度发布" as Canary
+    }
+}
+
+package "业务灵活性层面" {
+    node "插件化/规则化" as Plugin {
+        artifact "营销活动插件" as MarketingPlugin
+        artifact "通知渠道插件" as NotifyPlugin
+        artifact "规则引擎 (Drools)" as RuleEngine
+    }
+}
+
+MS --> BizSplit
+MS --> Stateless
+MS --> HPA
+
+Patterns --> Strategy
+Patterns --> Observer
+Patterns --> Template
+Patterns --> Factory
+
+NewFeature --> FeatureFlag
+NewFeature --> ApiFirst
+NewFeature --> Canary
+
+Plugin --> MarketingPlugin
+Plugin --> NotifyPlugin
+Plugin --> RuleEngine
+
+' 全局关系
+center footer "良好的扩展性设计是系统应对业务变化的基石"
+
+@enduml 

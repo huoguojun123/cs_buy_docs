@@ -1,0 +1,57 @@
+@startuml
+title "电商平台核心用例图"
+left to right direction
+
+actor "游客" as Guest
+actor "注册用户" as User
+actor "管理员" as Admin
+
+rectangle "电商平台系统" {
+  usecase "浏览商品" as UC_Browse
+  usecase "搜索商品" as UC_Search
+  usecase "查看商品详情" as UC_ViewDetail
+  usecase "用户注册" as UC_Register
+  usecase "用户登录" as UC_Login
+  usecase "添加到购物车" as UC_AddToCart
+  usecase "管理购物车" as UC_ManageCart
+  usecase "下订单" as UC_PlaceOrder
+  usecase "进行支付" as UC_Pay
+  usecase "查看订单历史" as UC_ViewOrders
+  usecase "管理个人信息" as UC_ManageProfile
+  usecase "商品管理" as UC_ManageProducts
+  usecase "订单管理" as UC_ManageOrders
+  usecase "用户管理" as UC_ManageUsers
+  usecase "后台仪表盘" as UC_Dashboard
+}
+
+' 访客权限
+Guest -- UC_Browse
+Guest -- UC_Search
+Guest -- UC_ViewDetail
+Guest -- UC_Register
+Guest -- UC_Login
+
+' 注册用户权限 (用户继承游客)
+User --|> Guest
+User -- UC_AddToCart
+User -- UC_ManageCart
+User -- UC_PlaceOrder
+User -- UC_Pay
+User -- UC_ViewOrders
+User -- UC_ManageProfile
+
+' 管理员权限 (管理员继承用户)
+Admin --|> User
+Admin -- UC_ManageProducts
+Admin -- UC_ManageOrders
+Admin -- UC_ManageUsers
+Admin -- UC_Dashboard
+
+' 关联关系
+' 支付是下订单流程的一部分
+UC_PlaceOrder ..> UC_Pay : <<include>>
+' 添加到购物车和下订单时，如果未登录，则需要登录
+UC_AddToCart <.. UC_Login : <<extend>>
+UC_PlaceOrder <.. UC_Login : <<extend>>
+
+@enduml 

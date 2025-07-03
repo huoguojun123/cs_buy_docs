@@ -1,0 +1,33 @@
+@startuml
+title "时序图 - 创建订单"
+
+actor User
+participant Frontend
+participant Gateway as "API 网关"
+participant OrderService as "订单服务"
+participant ProductService as "商品服务"
+participant InventoryService as "库存服务"
+
+User -> Frontend: 1. 点击"提交订单"
+Frontend -> Gateway: 2. 发起创建订单请求 (POST /api/v1/orders)
+Gateway -> OrderService: 3. 转发请求(携带用户信息和商品列表)
+
+OrderService -> ProductService: 4. 验证商品状态和价格
+ProductService --> OrderService: 5. 返回商品最新信息
+
+OrderService -> InventoryService: 6. 锁定库存 (lockStock)
+InventoryService -> InventoryService: 7. 检查库存是否充足
+alt 库存充足
+    InventoryService --> OrderService: 8a. 返回"锁定成功"
+    OrderService -> OrderService: 9a. 计算总价, 创建订单记录(状态:待支付)
+    OrderService --> Gateway: 10a. 返回订单信息(含订单号和支付链接)
+    Gateway --> Frontend: 11a. 返回成功响应
+    Frontend --> User: 12a. 跳转到支付页面
+else 库存不足
+    InventoryService --> OrderService: 8b. 返回"库存不足"
+    OrderService --> Gateway: 9b. 返回错误信息
+    Gateway --> Frontend: 10b. 返回错误响应
+    Frontend --> User: 11b. 显示"商品库存不足"提示
+end
+
+@enduml 

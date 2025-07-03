@@ -1,0 +1,38 @@
+@startuml
+title "时序图 - JWT Access Token 续签"
+
+participant Frontend
+participant Gateway as "API 网关"
+participant AuthService as "认证服务"
+database Redis
+
+note over Frontend, AuthService
+  前提: 用户已登录,
+  前端存有有效的 Refresh Token,
+  但 Access Token 已过期。
+end note
+
+Frontend -> Gateway: 1. 使用过期的Access Token请求受保护资源
+Gateway -> Gateway: 2. 验证Access Token, 发现已过期
+Gateway --> Frontend: 3. 返回 401 Unauthorized (或特定错误码表示Token过期)
+
+Frontend -> Frontend: 4. 捕获到401错误, 知道需要续签Token
+Frontend -> Gateway: 5. 发起续签请求 (POST /api/v1/auth/refresh), 携带Refresh Token
+Gateway -> AuthService: 6. 转发续签请求
+
+AuthService -> Redis: 7. 验证Refresh Token是否存在且有效
+Redis --> AuthService: 8. 返回验证结果
+alt Refresh Token有效
+    AuthService -> AuthService: 9a. 创建一个新的Access Token
+    AuthService --> Gateway: 10a. 返回新的Access Token
+    Gateway --> Frontend: 11a. 返回新的Access Token
+    Frontend -> Frontend: 12a. 更新本地存储的Access Token
+    Frontend -> Gateway: 13a. 使用新的Access Token重新发起第1步的请求
+    Gateway --> Frontend: 14a. 正常返回资源
+else Refresh Token无效/过期
+    AuthService --> Gateway: 9b. 返回错误 (e.g., 401/403)
+    Gateway --> Frontend: 10b. 返回错误
+    Frontend -> Frontend: 11b. 清除本地所有Token, 强制用户重新登录
+end
+
+@enduml 

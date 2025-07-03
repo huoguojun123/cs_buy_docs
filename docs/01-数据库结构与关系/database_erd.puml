@@ -1,0 +1,159 @@
+@startuml 电商平台数据库实体关系图
+
+' 样式设置
+skinparam class {
+  BackgroundColor White
+  ArrowColor Black
+  BorderColor Black
+}
+
+' 用户相关实体
+entity "User" as user {
+  * id : BIGINT <<PK>>
+  --
+  * username : VARCHAR(50) <<UNIQUE>>
+  * password : VARCHAR(100)
+  email : VARCHAR(100) <<UNIQUE>>
+  phone : VARCHAR(20) <<UNIQUE>>
+  nickname : VARCHAR(50)
+  avatar_url : VARCHAR(255)
+  account_status : TINYINT
+  wallet : BIGINT
+  created_user : BIGINT
+  updated_user : BIGINT
+  created_time : DATETIME
+  updated_time : DATETIME
+}
+
+entity "Address" as address {
+  * id : BIGINT <<PK>>
+  --
+  * user_id : BIGINT <<FK>>
+  * receiver : VARCHAR(50)
+  * phone : VARCHAR(20)
+  * province : VARCHAR(20)
+  * city : VARCHAR(20)
+  * district : VARCHAR(20)
+  * detail_address : VARCHAR(255)
+  is_default : TINYINT
+  created_time : DATETIME
+  updated_time : DATETIME
+}
+
+' 商品相关实体
+entity "Item" as item {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(100)
+  category : VARCHAR(50)
+  * price : INT
+  image_url : VARCHAR(255)
+  sales : INT
+  status : TINYINT
+  create_time : DATETIME
+  update_time : DATETIME
+  create_uesr : INT
+  update_user : INT
+}
+
+entity "Category" as category {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(50)
+  parent_id : BIGINT
+  level : INT
+  sort : INT
+  status : TINYINT
+  create_time : DATETIME
+  update_time : DATETIME
+}
+
+entity "Brand" as brand {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(50)
+  logo : VARCHAR(255)
+  description : VARCHAR(255)
+  status : TINYINT
+  create_time : DATETIME
+  update_time : DATETIME
+}
+
+entity "Stock" as stock {
+  * id : BIGINT <<PK>>
+  --
+  * item_id : BIGINT <<FK>>
+  * quantity : INT
+  lock_quantity : INT
+  update_time : DATETIME
+}
+
+' 交易相关实体
+entity "Trade" as trade {
+  * id : BIGINT <<PK>>
+  --
+  stock_id : BIGINT <<FK>>
+  * trade_no : VARCHAR(50) <<UNIQUE>>
+  * user_name : VARCHAR(50) <<FK>>
+  * seller_name : VARCHAR(50) <<FK>>
+  * total_amount : DECIMAL(10,2)
+  * status : TINYINT
+  payment_method : TINYINT
+  complete_time : DATETIME
+  cancel_time : DATETIME
+  item_name : VARCHAR(100)
+  cancel_reason : VARCHAR(255)
+  create_time : DATETIME
+}
+
+entity "TradeDetail" as trade_detail {
+  * id : BIGINT <<PK>>
+  --
+  * trade_id : BIGINT <<FK>>
+  * item_id : BIGINT <<FK>>
+  * quantity : INT
+  * price : DECIMAL(10,2)
+  * amount : DECIMAL(10,2)
+}
+
+entity "Payment" as payment {
+  * id : BIGINT <<PK>>
+  --
+  * trade_id : BIGINT <<FK>>
+  * payment_no : VARCHAR(50) <<UNIQUE>>
+  * amount : DECIMAL(10,2)
+  * status : TINYINT
+  * payment_method : TINYINT
+  payment_time : DATETIME
+  create_time : DATETIME
+}
+
+' 评价相关实体
+entity "Review" as review {
+  * id : BIGINT <<PK>>
+  --
+  * user_id : BIGINT <<FK>>
+  * item_id : BIGINT <<FK>>
+  * trade_id : BIGINT <<FK>>
+  * content : VARCHAR(500)
+  * rating : TINYINT
+  images : VARCHAR(1000)
+  status : TINYINT
+  create_time : DATETIME
+}
+
+' 关系定义
+user "1" -- "n" address : has
+user "1" -- "n" trade : places
+user "1" -- "n" review : writes
+
+item "1" -- "n" trade_detail : included_in
+item "1" -- "1" stock : has
+item "n" -- "1" category : belongs_to
+item "n" -- "1" brand : belongs_to
+item "1" -- "n" review : receives
+
+trade "1" -- "n" trade_detail : contains
+trade "1" -- "1" payment : has
+
+@enduml 

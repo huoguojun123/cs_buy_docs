@@ -1,0 +1,71 @@
+@startuml CI/CD 流程图
+
+skinparam componentStyle uml2
+skinparam rectangle {
+    RoundCorner 20
+}
+skinparam actor {
+    BackgroundColor LightGreen
+}
+skinparam cloud {
+    BackgroundColor LightBlue
+}
+
+actor "开发者" as Dev
+
+package "代码管理 (GitLab)" {
+    component "GitLab Repo" as Repo
+    component "GitLab CI/CD" as CI
+}
+
+package "构建 & 测试环境" {
+    component "CI Runner" as Runner
+}
+
+package "镜像仓库" {
+    cloud "Docker Registry" as Registry
+}
+
+package "部署环境" {
+    component "测试环境 (Staging)" as Staging
+    component "生产环境 (Production)\nKubernetes" as Prod
+}
+
+
+Dev --> Repo : git push (feature-branch)
+Dev -> Repo : 创建 Merge Request (to develop)
+Repo -> CI : 触发CI Pipeline
+
+CI --> Runner : 分配任务
+Runner -> Runner : 1. mvn test (单元测试)
+Runner -> Runner : 2. mvn package (打包)
+Runner --> CI : 返回结果
+
+CI -> Repo : 合并到 develop 分支
+Repo -> CI : 再次触发CI Pipeline (on develop)
+
+CI --> Runner : 分配部署任务
+Runner -> Staging : 部署到测试环境
+Staging --> Dev : 进行手动测试
+
+Dev -> Repo : git tag v1.0.0 (on main/master)
+Repo -> CI : 触发生产部署Pipeline (on tag)
+
+CI --> Runner : 分配任务
+Runner -> Runner : 1. 构建Docker镜像
+Runner -> Registry : 2. 推送镜像
+Runner -> Prod : 3. 更新K8s Deployment
+
+note right of CI
+  <b>.gitlab-ci.yml</b>
+  - stages: build, test, deploy
+  - jobs: build-backend, test-backend, ...
+  - rules: only on 'develop', 'tags'
+end note
+
+note bottom of Prod
+  <b>kubectl apply -f deployment.yml</b>
+  滚动更新 (Rolling Update)
+end note
+
+@enduml 

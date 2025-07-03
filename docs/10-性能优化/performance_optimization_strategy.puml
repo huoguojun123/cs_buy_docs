@@ -1,0 +1,90 @@
+@startuml 性能优化策略
+
+!theme vibrant
+
+title 电商平台全链路性能优化策略
+
+package "前端/客户端" {
+  node "浏览器" as Browser {
+    cloud "CDN 加速" as CDN
+    artifact "静态资源优化\n(压缩, 合并, WebP)" as StaticOpt
+    artifact "渲染优化\n(SSR, 懒加载, 虚拟滚动)" as RenderOpt
+    Browser ..> CDN
+    Browser --> StaticOpt
+    Browser --> RenderOpt
+  }
+}
+
+package "网络与接入层" {
+  component "Nginx/SLB" as LB
+  component "API Gateway" as Gateway
+  LB --> Gateway
+}
+
+package "应用服务层 (微服务集群)" {
+  component "业务服务" as BizSvc {
+    artifact "异步处理\n(MQ, CompletableFuture)" as Async
+    artifact "缓存应用\n(本地/分布式)" as AppCache
+    artifact "代码优化\n(算法, 并发)" as CodeOpt
+    artifact "限流/降级" as RateLimit
+  }
+  BizSvc --> Async
+  BizSvc --> AppCache
+  BizSvc --> CodeOpt
+  BizSvc --> RateLimit
+}
+
+package "数据与存储层" {
+  database "数据库 (MySQL)" as DB {
+    artifact "SQL & 索引优化" as SqlOpt
+    artifact "读写分离" as ReadWriteSplit
+    artifact "分库分表" as Sharding
+  }
+  storage "缓存 (Redis)" as Cache
+  queue "消息队列 (RocketMQ)" as MQ
+  
+  DB --> SqlOpt
+  DB --> ReadWriteSplit
+  DB --> Sharding
+}
+
+package "基础设施/运行时" {
+    component "JVM" as JVM {
+        artifact "GC调优\n(G1/ZGC)" as GcOpt
+        artifact "堆/元空间调优" as HeapOpt
+    }
+    node "容器 (Docker/K8s)" as Container {
+        artifact "资源配置\n(CPU/Memory)" as ResourceOpt
+        artifact "自动扩缩容 (HPA)" as HpaOpt
+    }
+    JVM --> GcOpt
+    JVM --> HeapOpt
+    Container --> ResourceOpt
+    Container --> HpaOpt
+}
+
+' 关系
+Gateway -> BizSvc
+BizSvc -> Cache
+BizSvc -> DB
+BizSvc -> MQ
+
+Browser -> LB
+
+' 注释
+note right of Gateway
+  - 负载均衡
+  - 统一限流
+end note
+
+note left of BizSvc
+  核心业务逻辑处理
+  是优化的重点区域
+end note
+
+note bottom of DB
+  数据存储的最终瓶颈
+  需要精细化设计
+end note
+
+@enduml 

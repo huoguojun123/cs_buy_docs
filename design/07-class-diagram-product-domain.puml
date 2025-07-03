@@ -1,0 +1,57 @@
+@startuml
+title "类图 - 商品领域模型"
+
+skinparam classAttributeIconSize 0
+
+class Product {
+  + Long productId
+  + String name
+  + String sku
+  + String description
+  + BigDecimal price
+  + Integer stock
+  + ProductStatus status
+  + String imageUrl
+  --
+  + updateStock(quantity)
+}
+
+class Category {
+  + Long categoryId
+  + String name
+  + String description
+  + Long parentId
+}
+
+class Brand {
+  + Long brandId
+  + String name
+}
+
+class Review {
+    + Long reviewId
+    + Long productId
+    + Long userId
+    + Integer rating
+    + String comment
+    + LocalDateTime createdAt
+}
+
+enum ProductStatus {
+  AVAILABLE
+  OUT_OF_STOCK
+  DISCONTINUED
+}
+
+
+Product " * " -- "1" Category : "Belongs to >"
+Product " * " -- "1" Brand : "Belongs to >"
+Product "1" -- "0..*" Review : "Has >"
+Category "1" -- "0..*" Category : "Has sub-categories >"
+
+note bottom of Product
+  SKU (Stock Keeping Unit)
+  是商品的唯一标识符。
+end note
+
+@enduml 

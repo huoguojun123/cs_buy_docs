@@ -1,0 +1,76 @@
+@startuml API网关架构图
+
+skinparam componentStyle uml2
+skinparam rectangle {
+    RoundCorner 20
+}
+skinparam database {
+    RoundCorner 20
+}
+
+package "客户端" {
+    actor "Web/App" as Client
+}
+
+package "基础设施" {
+    cloud "Nginx/LVS" as LB
+    database "Nacos" as Nacos
+    database "Redis" as Redis
+    database "Monitoring\n(Prometheus)" as Monitoring
+}
+
+package "API网关层 (Spring Cloud Gateway)" {
+    component "Gateway Instance 1" as GW1
+    component "Gateway Instance 2" as GW2
+    component "..." as GWn
+    
+    GW1 -[hidden]right- GW2
+    GW2 -[hidden]right- GWn
+}
+
+package "后端微服务" {
+    component "用户服务" as UserService
+    component "商品服务" as ItemService
+    component "订单服务" as TradeService
+    component "其他服务" as OtherService
+    
+    UserService -[hidden]down- ItemService
+    ItemService -[hidden]down- TradeService
+    TradeService -[hidden]down- OtherService
+}
+
+Client --> LB
+
+LB --> GW1
+LB --> GW2
+LB --> GWn
+
+GW1 ..> Nacos : <-> 服务发现/动态路由
+GW1 ..> Redis : <-> 限流/缓存
+GW1 ..> Monitoring : -> 指标上报
+
+GW2 ..> Nacos : <-> 服务发现/动态路由
+GW2 ..> Redis : <-> 限流/缓存
+GW2 ..> Monitoring : -> 指标上报
+
+
+GW1 --> UserService : 路由请求
+GW1 --> ItemService : 路由请求
+GW1 --> TradeService : 路由请求
+
+GW2 --> UserService : 路由请求
+GW2 --> ItemService : 路由请求
+GW2 --> TradeService : 路由请求
+
+
+note right of GW1 {
+    <b>Gateway Filters:</b>
+    - 认证 (AuthFilter)
+    - 限流 (RateLimiterFilter)
+    - 熔断 (CircuitBreakerFilter)
+    - 日志 (LoggingFilter)
+    - 路由 (RoutingFilter)
+    - ...
+}
+
+@enduml 

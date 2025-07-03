@@ -1,0 +1,103 @@
+@startuml 电商平台微服务调用关系图
+
+' 样式设置
+skinparam component {
+  BackgroundColor White
+  BorderColor Black
+  ArrowColor Black
+}
+
+' 定义组件
+[客户端] as Client
+[网关服务\ngateway-service] as GatewayService
+[用户服务\nuser-service] as UserService
+[商品服务\nitem-service] as ItemService
+[交易服务\ntrade-service] as TradeService
+[支付服务\npay-service] as PayService
+[库存服务\nstock-service] as StockService
+[评价服务\nreview-service] as ReviewService
+[品牌服务\nbrand-service] as BrandService
+[分类服务\ncategory-service] as CategoryService
+[通知服务\ninform-service] as NotifyService
+[日志服务\nlog-service] as LogService
+[公共服务\ncommon-service] as CommonService
+
+' 定义注册中心和配置中心
+database "Nacos\n服务注册与配置中心" as Nacos
+database "Redis\n缓存" as Redis
+database "MySQL\n数据库" as MySQL
+
+' 客户端与网关的关系
+Client --> GatewayService : HTTP请求
+
+' 网关与各服务的关系
+GatewayService --> UserService : 路由用户相关请求
+GatewayService --> ItemService : 路由商品相关请求
+GatewayService --> TradeService : 路由订单相关请求
+GatewayService --> PayService : 路由支付相关请求
+GatewayService --> ReviewService : 路由评价相关请求
+GatewayService --> BrandService : 路由品牌相关请求
+GatewayService --> CategoryService : 路由分类相关请求
+GatewayService --> NotifyService : 路由通知相关请求
+
+' 服务间调用关系
+TradeService --> ItemService : 获取商品信息
+TradeService --> UserService : 获取用户信息
+TradeService --> StockService : 操作库存
+TradeService --> PayService : 创建支付单
+TradeService --> NotifyService : 发送订单通知
+
+PayService --> TradeService : 查询订单信息
+PayService --> UserService : 操作用户余额
+PayService --> NotifyService : 发送支付通知
+
+ReviewService --> TradeService : 验证订单状态
+ReviewService --> ItemService : 更新商品评分
+ReviewService --> UserService : 获取用户信息
+ReviewService --> NotifyService : 发送评价通知
+
+ItemService --> BrandService : 获取品牌信息
+ItemService --> CategoryService : 获取分类信息
+ItemService --> StockService : 管理商品库存
+
+' 所有服务与基础设施的关系
+UserService --> MySQL : 持久化数据
+ItemService --> MySQL : 持久化数据
+TradeService --> MySQL : 持久化数据
+PayService --> MySQL : 持久化数据
+StockService --> MySQL : 持久化数据
+ReviewService --> MySQL : 持久化数据
+BrandService --> MySQL : 持久化数据
+CategoryService --> MySQL : 持久化数据
+NotifyService --> MySQL : 持久化数据
+LogService --> MySQL : 持久化数据
+
+UserService --> Redis : 缓存数据
+ItemService --> Redis : 缓存数据
+TradeService --> Redis : 缓存数据
+StockService --> Redis : 缓存数据
+
+' 所有服务与注册中心的关系
+UserService --> Nacos : 注册服务/获取配置
+ItemService --> Nacos : 注册服务/获取配置
+TradeService --> Nacos : 注册服务/获取配置
+PayService --> Nacos : 注册服务/获取配置
+StockService --> Nacos : 注册服务/获取配置
+ReviewService --> Nacos : 注册服务/获取配置
+BrandService --> Nacos : 注册服务/获取配置
+CategoryService --> Nacos : 注册服务/获取配置
+NotifyService --> Nacos : 注册服务/获取配置
+LogService --> Nacos : 注册服务/获取配置
+CommonService --> Nacos : 注册服务/获取配置
+GatewayService --> Nacos : 注册服务/获取配置
+
+' 日志服务与其他服务的关系
+LogService <-- UserService : 记录操作日志
+LogService <-- ItemService : 记录操作日志
+LogService <-- TradeService : 记录操作日志
+LogService <-- PayService : 记录操作日志
+LogService <-- StockService : 记录操作日志
+LogService <-- ReviewService : 记录操作日志
+LogService <-- GatewayService : 记录API访问日志
+
+@enduml 

@@ -1,0 +1,55 @@
+@startuml
+title "类图 - 订单领域模型"
+
+skinparam classAttributeIconSize 0
+
+class Order {
+  + Long orderId
+  + String orderNumber
+  + Long userId
+  + Long shippingAddressId
+  + BigDecimal itemsPrice
+  + BigDecimal shippingFee
+  + BigDecimal totalPrice
+  + OrderStatus status
+  + PaymentInfo paymentInfo
+  + LocalDateTime createdAt
+  --
+  + calculateTotal()
+}
+
+class OrderItem {
+  + Long orderItemId
+  + Long productId
+  + String productName
+  + String productImage
+  + Integer quantity
+  + BigDecimal unitPrice
+  --
+  + calculateSubtotal()
+}
+
+class PaymentInfo {
+    + String paymentMethod
+    + String transactionId
+    + LocalDateTime paidAt
+}
+
+enum OrderStatus {
+  PENDING_PAYMENT
+  PAID
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+Order "1" -- "1..*" OrderItem : "Contains >"
+
+note right of Order::orderNumber
+  对外暴露的订单号,
+  通常有业务含义,
+  不同于数据库主键 orderId。
+end note
+
+@enduml 

@@ -1,0 +1,70 @@
+@startuml
+title "电商平台后端微服务组件图"
+
+skinparam componentStyle uml2
+
+package "电商平台后端" {
+    [API Gateway] as Gateway
+    [Auth Service] as AuthService
+    [User Service] as UserService
+    [Product Service] as ProductService
+    [Search Service] as SearchService
+    [Order Service] as OrderService
+    [Inventory Service] as InventoryService
+    [Payment Service] as PaymentService
+}
+
+database "数据库集群" {
+    [User DB]
+    [Product DB]
+    [Order DB]
+}
+
+database "中间件" {
+    [Nacos]
+    [Seata]
+    [Redis]
+    [Elasticsearch]
+    [RabbitMQ]
+}
+
+
+' --- 核心依赖关系 ---
+Gateway --> AuthService : 认证/鉴权
+Gateway --> UserService
+Gateway --> ProductService
+Gateway --> SearchService
+Gateway --> OrderService
+
+AuthService .> [User DB]
+AuthService .> [Redis] : 存储Token
+
+UserService .> [User DB]
+
+ProductService .> [Product DB]
+ProductService .> [RabbitMQ] : 商品变更事件
+
+SearchService .> [Elasticsearch]
+SearchService ..> [RabbitMQ] : 订阅商品变更
+
+OrderService .> [Order DB]
+OrderService ..> ProductService : 查询商品
+OrderService ..> InventoryService : 操作库存
+OrderService ..> PaymentService : 发起支付
+OrderService ..> [Seata] : 分布式事务
+
+InventoryService .> [Product DB] : 库存表
+
+PaymentService ..> OrderService : 更新订单状态
+
+' --- 基础服务依赖 ---
+AuthService ..> [Nacos]
+UserService ..> [Nacos]
+ProductService ..> [Nacos]
+SearchService ..> [Nacos]
+OrderService ..> [Nacos]
+InventoryService ..> [Nacos]
+PaymentService ..> [Nacos]
+
+
+@enduml 

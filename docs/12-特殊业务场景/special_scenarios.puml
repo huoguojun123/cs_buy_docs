@@ -1,0 +1,48 @@
+@startuml 特殊业务场景解决方案
+
+!theme amiga
+
+left to right direction
+
+package "秒杀系统" {
+  artifact "流量削峰" as Throttling
+  artifact "异步下单" as AsyncOrder
+  artifact "Redis预减库存" as RedisStock
+  Throttling -- AsyncOrder
+  AsyncOrder -- RedisStock
+}
+
+package "大数据报表" {
+    artifact "离线计算" as OfflineCompute
+    artifact "数据预生成" as PreGenerate
+    artifact "Canal数据同步" as CanalSync
+    OfflineCompute -- PreGenerate
+    PreGenerate -- CanalSync
+}
+
+package "搜索服务" {
+    storage "Elasticsearch" as ES
+    artifact "IK分词器" as IK
+    artifact "相关度排序" as Scoring
+    ES -- IK
+    IK -- Scoring
+}
+
+package "推荐系统" {
+    artifact "协同过滤 (ALS)" as CF
+    artifact "离线模型训练" as OfflineModel
+    artifact "热门/规则推荐" as RuleBased
+    CF -- OfflineModel
+    OfflineModel -- RuleBased
+}
+
+
+rectangle "核心思想" {
+  node "隔离"
+  node "异步"
+  node "预计算"
+  node "专用中间件"
+}
+
+
+@enduml 

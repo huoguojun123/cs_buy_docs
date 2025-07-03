@@ -1,0 +1,64 @@
+@startuml 国际化与本地化策略
+
+!theme plain
+
+title i18n & L10n 核心策略
+
+left to right direction
+
+package "国际化 (i18n)" {
+  node "UI文本" as UI {
+    agent "前端 (vue-i18n)" as FrontendI18n
+    agent "后端 (MessageSource)" as BackendI18n
+    file "资源文件\n(JSON, .properties)" as ResourceFiles
+    UI --> FrontendI18n
+    UI --> BackendI18n
+    FrontendI18n --> ResourceFiles
+    BackendI18n --> ResourceFiles
+  }
+  
+  node "业务数据" as BizData {
+      database "数据库设计" as DBDesign {
+        artifact "字段扩展法\n(item_i18n表)" as ColumnExtension
+    }
+    BizData --> DBDesign
+  }
+}
+
+package "本地化 (L10n)" {
+    node "格式化" as Formatting {
+        artifact "货币 (Currency)" as Currency
+        artifact "日期 & 时间 (Date & Time)" as DateTime
+        artifact "数字 (Number)" as NumberFormat
+    }
+    node "文化适配" as Cultural {
+        artifact "地址格式" as Address
+        artifact "姓名格式" as NameFormat
+        artifact "合规性 (GDPR)" as Compliance
+    }
+}
+
+package "流程与工具" {
+    agent "语言确定" as LangDetection {
+        artifact "用户设置 > URL > Header" as DetectionOrder
+    }
+    cloud "翻译管理平台\n(Crowdin, Weblate)" as TranslationPlatform
+    agent "本地化测试" as L10nTesting
+}
+
+
+' 关系
+Formatting --> Currency
+Formatting --> DateTime
+Formatting --> NumberFormat
+Cultural --> Address
+Cultural --> NameFormat
+Cultural --> Compliance
+
+LangDetection --> DetectionOrder
+TranslationPlatform <.down. CI
+L10nTesting .up.> QA
+
+center footer "为全球用户提供无缝的本地化体验"
+
+@enduml 

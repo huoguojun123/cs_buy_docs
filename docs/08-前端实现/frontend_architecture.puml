@@ -1,0 +1,84 @@
+@startuml 前端架构图
+
+skinparam componentStyle uml2
+skinparam rectangle {
+    RoundCorner 20
+    BackgroundColor LightBlue
+}
+
+package "构建与环境" {
+    component [Vite] as Vite
+    component [.env.*] as Env
+}
+
+package "核心库" {
+    component [Vue 3] as Vue
+    component [Vue Router] as Router
+    component [Pinia] as Pinia
+    component [Axios] as Axios
+    component [Element Plus] as ElementPlus
+}
+
+package "项目源码 (src)" {
+    folder "api" as Api
+    folder "assets" as Assets
+    folder "components" as Components
+    folder "layout" as Layout
+    folder "router" as RouterConfig
+    folder "store" as Store
+    folder "utils" as Utils
+    folder "views" as Views
+    file "main.js" as Main
+    file "App.vue" as App
+}
+
+
+' 依赖关系
+Main --> Vue
+Main --> RouterConfig
+Main --> Store
+Main --> ElementPlus
+Main --> App
+
+App --> Router
+App --> Layout
+
+RouterConfig ..> Router
+RouterConfig ..> Views
+RouterConfig ..> Store : 导航守卫
+
+Store ..> Pinia
+Store ..> Api : 调用Action
+
+Api ..> Axios
+Utils ..> Axios : 封装
+
+Views --> Components
+Views ..> Api
+Views ..> Store
+
+Layout --> Components
+
+Vite --> Main : 打包入口
+Vite ..> Env : 加载环境变量
+
+note right of Axios {
+  <b>拦截器:</b>
+  - 请求: 添加Token
+  - 响应: 统一错误处理/Token失效处理
+}
+
+note bottom of Pinia {
+  <b>模块化状态管理:</b>
+  - User Store
+  - Cart Store
+  - Product Store
+}
+
+note left of RouterConfig {
+  <b>路由守卫 (beforeEach):</b>
+  - 登录认证
+  - 角色权限校验
+}
+
+@enduml 

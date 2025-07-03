@@ -1,0 +1,27 @@
+@startuml
+title "时序图 - 商品搜索"
+
+actor "用户" as User
+participant "前端应用 (Vue)" as Frontend
+participant "API 网关" as Gateway
+participant "搜索服务 (Search-Service)" as SearchService
+database "Elasticsearch集群" as ES
+
+User -> Frontend: 1. 输入搜索关键词 (e.g., "笔记本电脑")
+Frontend -> Frontend: 2. (可选) 提供搜索建议/自动补全
+
+Frontend -> Gateway: 3. 发送搜索请求 (GET /api/v1/search?q=笔记本电脑&page=1)
+Gateway -> SearchService: 4. 转发请求
+
+SearchService -> ES: 5. 构建DSL查询 (包括关键词匹配, 过滤, 分页, 排序, 高亮)
+ES -> ES: 6. 执行搜索查询
+ES --> SearchService: 7. 返回搜索结果 (JSON格式, 含命中总数, 商品ID列表, 高亮片段)
+
+SearchService -> SearchService: 8. (可选) 聚合处理或补充信息
+SearchService --> Gateway: 9. 返回处理后的结果
+Gateway --> Frontend: 10. 返回搜索结果JSON
+
+Frontend -> Frontend: 11. 渲染搜索结果页面 (展示商品列表, 分页信息, 筛选器)
+Frontend --> User: 12. 用户查看搜索结果
+
+@enduml 
